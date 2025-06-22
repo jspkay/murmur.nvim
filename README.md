@@ -22,6 +22,7 @@ murmur.nvim transforms Neovim into your personal transcription tool by integrati
 
 - Neovim >= 0.9.0
 - whisper.cpp server running locally
+  - The server in question is avaliable at [whisper.cpp](https://github.com/ggml-org/whisper.cpp), precisely, it's part of the examples.
 - One of the following audio recording tools:
   - SoX (recommended):
     - macOS: `brew install sox`

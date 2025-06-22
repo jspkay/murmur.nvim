@@ -47,7 +47,7 @@ end
 -- Check NPU server availability
 local function check_server()
     local health_url = string.format(
-        "http://%s:%d/models",
+        "http://%s:%d/",
         W.config.server.host,
         W.config.server.port
     )
@@ -57,13 +57,14 @@ local function check_server()
     
     local result = handle:read("*a")
     handle:close()
+    return true
     
-    if result then
-        local success, decoded = pcall(vim.json.decode, result)
-        if success and decoded then return true end
-    end
-    
-    return false
+    --if result then
+    --     local success, decoded = pcall(vim.json.decode, result)
+    --     if success and decoded then return true end
+    -- end
+    -- 
+    -- return false
 end
 
 -- Core recording and transcription function
@@ -179,16 +180,17 @@ local whisper = function(callback)
     -- Transcription handler with proper error handling
     local function transcribe()
         local endpoint = string.format(
-            "http://%s:%d/transcribe/%s",
+            "http://%s:%d/inference",
             W.config.server.host,
-            W.config.server.port,
-            W.config.server.model
+            W.config.server.port
         )
 
         local curl_cmd = string.format(
-            'curl -X POST -H "Content-Type: audio/wav" --data-binary "@%s" %s',
-            session.rec_file,
-            endpoint
+            'curl %s -H "Content-Type: multipart/form-data" -F file=%s ' ..
+            '-F temperature="0.0" -F temperature_inc="0.2" ' ..
+            '-F response_format="json" --no-progress-meter',
+            endpoint,
+            session.rec_file
         )
 
         tasker.run(nil, "bash", { "-c", curl_cmd }, function(code, signal, stdout, _)
@@ -204,7 +206,8 @@ local whisper = function(callback)
 
             local success, decoded = pcall(vim.json.decode, stdout)
             if success and decoded and decoded.text then
-                callback(decoded.text)
+                text = string.gsub(decoded.text, "\n", "")
+                callback(text)
             else
                 vim.notify("Failed to decode server response", vim.log.levels.ERROR)
             end
